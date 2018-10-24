@@ -149,6 +149,6 @@ fn main() {
         }
         //break;
     } // for loop
-    println!("Bad crates:");
+    println!("crashes found:");
     bad_crates.into_iter().for_each(|c| println!("{}", c));
 }
