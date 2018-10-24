@@ -157,7 +157,7 @@ fn main() {
         if work_dir.is_dir() {
             std::fs::remove_dir_all(&work_dir).unwrap();
         }
-        if target_dir_counter >= 100 {
+        if target_dir_counter >= 400 {
             // clear target dir
             println!("CLEARING TARGET DIR");
             std::fs::remove_dir_all(&target_dir).unwrap();
