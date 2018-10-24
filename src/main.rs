@@ -2,7 +2,6 @@ use std::fs;
 use std::fs::{create_dir, read_dir};
 use std::io::Write;
 use std::process::Command;
-//use rayon::prelude::*;
 
 fn main() {
     // store build artifacts here
@@ -45,7 +44,7 @@ fn main() {
 
     let mut bad_crates = Vec::new();
 
-    for (crate_counter, archive) in crate_archives.iter().enumerate() {
+    for (crate_counter, archive) in crate_archives.into_iter().enumerate() {
         target_dir_counter += 1;
         // create workdir if it does not exist
         if !work_dir.is_dir() {
