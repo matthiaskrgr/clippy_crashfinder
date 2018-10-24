@@ -1,7 +1,7 @@
-use std::fs::{create_dir, read_dir};
 use std::fs;
+use std::fs::{create_dir, read_dir};
+use std::io::Write;
 use std::process::Command;
-use std::io::{Write};
 
 fn main() {
     // store build artifacts here
@@ -27,7 +27,6 @@ fn main() {
     let mut work_dir = std::path::PathBuf::from("/tmp");
     work_dir.push("clippy_workdir");
     let work_dir = work_dir; // unmut
-
 
     let crates = read_dir(crate_archives).unwrap(); // all the creates from the cargo cache
 
@@ -82,7 +81,7 @@ fn main() {
 
         let mut crate_dir = work_dir.clone();
         crate_dir.push(&crate_name);
-    //    println!("CD {:?}", crate_dir);
+        //    println!("CD {:?}", crate_dir);
         print!("{:>4} Checking {}", crate_counter, crate_name,);
         std::io::stdout().flush().unwrap();
         let clippy = std::process::Command::new("cargo")
@@ -90,45 +89,53 @@ fn main() {
             .arg("--all-targets")
             .arg("--all-features")
             .arg("-vvvv")
-            .args(&["--"
-            ,"--cap-lints", "warn"
-            ,"-Wclippy::internal"
-            ,"-Wclippy::pedantic"
-            ,"-Wclippy::nursery"
-            ,"-Wabsolute-paths-not-starting-with-crate"
-            ,"-Wbare-trait-objects"
-            ,"-Wbox-pointers"
-            ,"-Welided-lifetimes-in-paths"
-            ,"-Wellipsis-inclusive-range-patterns"
-            ,"-Wkeyword-idents"
-            ,"-Wmacro-use-extern-crate"
-            ,"-Wmissing-copy-implementations"
-            ,"-Wmissing-debug-implementations"
-            ,"-Wmissing-docs"
-            ,"-Wquestion-mark-macro-sep"
-            ,"-Wsingle-use-lifetimes"
-            ,"-Wtrivial-casts"
-            ,"-Wtrivial-numeric-casts"
-            ,"-Wunreachable-pub"
-            ,"-Wunsafe-code"
-            ,"-Wunstable-features"
-            ,"-Wunused-extern-crates"
-            ,"-Wunused-import-braces"
-            ,"-Wunused-labels"
-            ,"-Wunused-lifetimes"
-            ,"-Wunused-qualifications"
-            ,"-Wunused-results"
-            ,"-Wvariant-size-differences"])
+            .args(&[
+                "--",
+                "--cap-lints",
+                "warn",
+                "-Wclippy::internal",
+                "-Wclippy::pedantic",
+                "-Wclippy::nursery",
+                "-Wabsolute-paths-not-starting-with-crate",
+                "-Wbare-trait-objects",
+                "-Wbox-pointers",
+                "-Welided-lifetimes-in-paths",
+                "-Wellipsis-inclusive-range-patterns",
+                "-Wkeyword-idents",
+                "-Wmacro-use-extern-crate",
+                "-Wmissing-copy-implementations",
+                "-Wmissing-debug-implementations",
+                "-Wmissing-docs",
+                "-Wquestion-mark-macro-sep",
+                "-Wsingle-use-lifetimes",
+                "-Wtrivial-casts",
+                "-Wtrivial-numeric-casts",
+                "-Wunreachable-pub",
+                "-Wunsafe-code",
+                "-Wunstable-features",
+                "-Wunused-extern-crates",
+                "-Wunused-import-braces",
+                "-Wunused-labels",
+                "-Wunused-lifetimes",
+                "-Wunused-qualifications",
+                "-Wunused-results",
+                "-Wvariant-size-differences",
+            ])
             .current_dir(&crate_dir)
             .env("CARGO_INCREMENTAL", "0")
             .env("RUST_BACKTRACE", "full")
             .env("CARGO_TARGET_DIR", &target_dir)
-            .output().unwrap();
+            .output()
+            .unwrap();
         //println!("crate_dir: {}, cargo_target_dir {}", crate_dir, target_dir.display());
         //println!("output: {:?}", CLIPPY);
         let stderr = String::from_utf8_lossy(&clippy.stderr);
         let stdout = String::from_utf8_lossy(&clippy.stdout);
-        if stderr.contains("internal compiler error") || stderr.contains("query stack during panic") || stdout.contains("internal compiler error") || stdout.contains("query stack during panic") {
+        if stderr.contains("internal compiler error")
+            || stderr.contains("query stack during panic")
+            || stdout.contains("internal compiler error")
+            || stdout.contains("query stack during panic")
+        {
             println!(" ERROR");
             bad_crates.push(crate_name);
         } else {
