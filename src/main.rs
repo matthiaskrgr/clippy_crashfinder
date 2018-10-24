@@ -16,6 +16,14 @@ fn main() {
     if !target_dir.is_dir() {
         fs::create_dir(&target_dir).unwrap();
     }
+
+    let mut crashes_dir = std::path::PathBuf::from("/tmp");
+    crashes_dir.push("clippy_crashes");
+    if !crashes_dir.exists()  {
+        fs::create_dir(&crashes_dir).unwrap();
+    }
+
+
     // get crates to check from here
     let mut crate_archives = dirs::home_dir().unwrap();
     crate_archives.push(".cargo");
@@ -81,8 +89,9 @@ fn main() {
         //    println!("CD {:?}", crate_dir);
         print!("{:>4} Checking {}", crate_counter, crate_name,);
         std::io::stdout().flush().unwrap();
-        let clippy = std::process::Command::new("cargo")
+       let clippy = std::process::Command::new("cargo")
             .arg("clippy")
+//        let clippy = std::process::Command::new("/home/matthias/vcs/github/rust-clippy/target/debug/cargo-clippy")
             .arg("--all-targets")
             .arg("--all-features")
             .arg("-vvvv")
@@ -133,8 +142,12 @@ fn main() {
             || stdout.contains("internal compiler error")
             || stdout.contains("query stack during panic")
         {
-            println!(" ERROR");
+            println!(" ERROR: something crashed");
             bad_crates.push(crate_name);
+            // copy crate into the crashes dir
+            let mut crash_dest = crashes_dir.clone();
+            crash_dest.push(&archive_name);
+            fs::copy(&copy_source, crash_dest).unwrap();
         } else {
             println!(" ok");
         }
