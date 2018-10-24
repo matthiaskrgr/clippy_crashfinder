@@ -1,8 +1,7 @@
-use dirs::home_dir;
-use std::fs::{copy, create_dir, read_dir};
+use std::fs::{create_dir, read_dir};
 use std::fs;
 use std::process::Command;
-use std::io::{self, Write};
+use std::io::{Write};
 
 fn main() {
     // store build artifacts here
@@ -46,6 +45,8 @@ fn main() {
 
     let mut crate_counter: u32 = 0;
 
+    let mut bad_crates = Vec::new();
+
     for archive in crate_archives {
         target_dir_counter += 1;
         crate_counter += 1;
@@ -66,7 +67,7 @@ fn main() {
 
         // extract the .crate
         // @TODO make this pure rust
-        let tar = std::process::Command::new("tar")
+        let tar = Command::new("tar")
             .arg("-xvzf")
             .arg(&copy_dest)
             .current_dir(&work_dir)
@@ -129,6 +130,7 @@ fn main() {
         let stdout = String::from_utf8_lossy(&clippy.stdout);
         if stderr.contains("internal compiler error") || stderr.contains("query stack during panic") || stdout.contains("internal compiler error") || stdout.contains("query stack during panic") {
             println!(" ERROR");
+            bad_crates.push(crate_name);
         } else {
             println!(" ok");
         }
@@ -146,5 +148,7 @@ fn main() {
             target_dir_counter = 0;
         }
         //break;
-    }
+    } // for loop
+    println!("Bad crates:");
+    bad_crates.into_iter().for_each(|c| println!("{}", c));
 }
