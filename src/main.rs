@@ -19,10 +19,9 @@ fn main() {
 
     let mut crashes_dir = std::path::PathBuf::from("/tmp");
     crashes_dir.push("clippy_crashes");
-    if !crashes_dir.exists()  {
+    if !crashes_dir.exists() {
         fs::create_dir(&crashes_dir).unwrap();
     }
-
 
     // get crates to check from here
     let mut crate_archives = dirs::home_dir().unwrap();
@@ -89,50 +88,52 @@ fn main() {
         //    println!("CD {:?}", crate_dir);
         print!("{:>4} Checking {}", crate_counter, crate_name,);
         std::io::stdout().flush().unwrap();
-//       let clippy = std::process::Command::new("cargo")
-//            .arg("clippy")
-        let clippy = std::process::Command::new("/home/matthias/vcs/github/rust-clippy/target/debug/cargo-clippy")
-            .arg("--all-targets")
-            .arg("--all-features")
-            .arg("-vvvv")
-            .args(&[
-                "--",
-                "--cap-lints",
-                "warn",
-                "-Wclippy::internal",
-                "-Wclippy::pedantic",
-                "-Wclippy::nursery",
-                "-Wabsolute-paths-not-starting-with-crate",
-                "-Wbare-trait-objects",
-                "-Wbox-pointers",
-                "-Welided-lifetimes-in-paths",
-                "-Wellipsis-inclusive-range-patterns",
-                "-Wkeyword-idents",
-                "-Wmacro-use-extern-crate",
-                "-Wmissing-copy-implementations",
-                "-Wmissing-debug-implementations",
-                "-Wmissing-docs",
-                "-Wquestion-mark-macro-sep",
-                "-Wsingle-use-lifetimes",
-                "-Wtrivial-casts",
-                "-Wtrivial-numeric-casts",
-                "-Wunreachable-pub",
-                "-Wunsafe-code",
-                "-Wunstable-features",
-                "-Wunused-extern-crates",
-                "-Wunused-import-braces",
-                "-Wunused-labels",
-                "-Wunused-lifetimes",
-                "-Wunused-qualifications",
-                "-Wunused-results",
-                "-Wvariant-size-differences",
-            ])
-            .current_dir(&crate_dir)
-            .env("CARGO_INCREMENTAL", "0")
-            .env("RUST_BACKTRACE", "full")
-            .env("CARGO_TARGET_DIR", &target_dir)
-            .output()
-            .unwrap();
+        //       let clippy = std::process::Command::new("cargo")
+        //            .arg("clippy")
+        let clippy = std::process::Command::new(
+            "/home/matthias/vcs/github/rust-clippy/target/debug/cargo-clippy",
+        )
+        .arg("--all-targets")
+        .arg("--all-features")
+        .arg("-vvvv")
+        .args(&[
+            "--",
+            "--cap-lints",
+            "warn",
+            "-Wclippy::internal",
+            "-Wclippy::pedantic",
+            "-Wclippy::nursery",
+            "-Wabsolute-paths-not-starting-with-crate",
+            "-Wbare-trait-objects",
+            "-Wbox-pointers",
+            "-Welided-lifetimes-in-paths",
+            "-Wellipsis-inclusive-range-patterns",
+            "-Wkeyword-idents",
+            "-Wmacro-use-extern-crate",
+            "-Wmissing-copy-implementations",
+            "-Wmissing-debug-implementations",
+            "-Wmissing-docs",
+            "-Wquestion-mark-macro-sep",
+            "-Wsingle-use-lifetimes",
+            "-Wtrivial-casts",
+            "-Wtrivial-numeric-casts",
+            "-Wunreachable-pub",
+            "-Wunsafe-code",
+            "-Wunstable-features",
+            "-Wunused-extern-crates",
+            "-Wunused-import-braces",
+            "-Wunused-labels",
+            "-Wunused-lifetimes",
+            "-Wunused-qualifications",
+            "-Wunused-results",
+            "-Wvariant-size-differences",
+        ])
+        .current_dir(&crate_dir)
+        .env("CARGO_INCREMENTAL", "0")
+        .env("RUST_BACKTRACE", "full")
+        .env("CARGO_TARGET_DIR", &target_dir)
+        .output()
+        .unwrap();
         //println!("crate_dir: {}, cargo_target_dir {}", crate_dir, target_dir.display());
         //println!("output: {:?}", CLIPPY);
         let stderr = String::from_utf8_lossy(&clippy.stderr).to_string();
@@ -155,8 +156,6 @@ fn main() {
             stdout_file.push(".stdout");
             fs::write(stderr_file, stderr).unwrap();
             fs::write(stdout_file, stdout).unwrap();
-
-            
         } else {
             println!(" ok");
         }
