@@ -89,9 +89,9 @@ fn main() {
         //    println!("CD {:?}", crate_dir);
         print!("{:>4} Checking {}", crate_counter, crate_name,);
         std::io::stdout().flush().unwrap();
-       let clippy = std::process::Command::new("cargo")
-            .arg("clippy")
-//        let clippy = std::process::Command::new("/home/matthias/vcs/github/rust-clippy/target/debug/cargo-clippy")
+//       let clippy = std::process::Command::new("cargo")
+//            .arg("clippy")
+        let clippy = std::process::Command::new("/home/matthias/vcs/github/rust-clippy/target/debug/cargo-clippy")
             .arg("--all-targets")
             .arg("--all-features")
             .arg("-vvvv")
@@ -135,8 +135,8 @@ fn main() {
             .unwrap();
         //println!("crate_dir: {}, cargo_target_dir {}", crate_dir, target_dir.display());
         //println!("output: {:?}", CLIPPY);
-        let stderr = String::from_utf8_lossy(&clippy.stderr);
-        let stdout = String::from_utf8_lossy(&clippy.stdout);
+        let stderr = String::from_utf8_lossy(&clippy.stderr).to_string();
+        let stdout = String::from_utf8_lossy(&clippy.stdout).to_string();
         if stderr.contains("internal compiler error")
             || stderr.contains("query stack during panic")
             || stdout.contains("internal compiler error")
@@ -147,7 +147,16 @@ fn main() {
             // copy crate into the crashes dir
             let mut crash_dest = crashes_dir.clone();
             crash_dest.push(&archive_name);
-            fs::copy(&copy_source, crash_dest).unwrap();
+            fs::copy(&copy_source, &crash_dest).unwrap();
+            // save stdout and stderr
+            let mut stderr_file = crash_dest.clone();
+            stderr_file.push(".stderr");
+            let mut stdout_file = crash_dest.clone();
+            stdout_file.push(".stdout");
+            fs::write(stderr_file, stderr).unwrap();
+            fs::write(stdout_file, stdout).unwrap();
+
+            
         } else {
             println!(" ok");
         }
