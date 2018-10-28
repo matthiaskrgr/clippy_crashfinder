@@ -51,7 +51,23 @@ fn main() {
 
     let mut bad_crates = Vec::new();
 
+    #[allow(non_snake_case)]
+    let SKIP_LIST: Vec<&str> = vec!["jni-0.10.2.crate"]; // hangs forever in build.rs
+
     for (crate_counter, archive) in crate_archives.into_iter().enumerate() {
+        // check if we need to skip the package
+        let mut skip_iteration: bool = false;
+        for bad_crate in &SKIP_LIST {
+            if archive.file_name().unwrap().to_str().unwrap() == *bad_crate {
+                println!("SKIPPING {:?}", archive.file_name());
+                skip_iteration = true;
+            }
+        }
+        if skip_iteration  {continue;}
+
+
+
+
         target_dir_counter += 1;
         // create workdir if it does not exist
         if !work_dir.is_dir() {
@@ -88,11 +104,11 @@ fn main() {
         //    println!("CD {:?}", crate_dir);
         print!("{:>4} Checking {}", crate_counter, crate_name,);
         std::io::stdout().flush().unwrap();
-        //       let clippy = std::process::Command::new("cargo")
-        //            .arg("clippy")
-        let clippy = std::process::Command::new(
-            "/home/matthias/vcs/github/rust-clippy/target/debug/cargo-clippy",
-        )
+               let clippy = std::process::Command::new("cargo")
+                    .arg("check")
+    //    let clippy = std::process::Command::new(
+    //        "/home/matthias/vcs/github/rust-clippy/target/debug/cargo-clippy",
+    //    )
         .arg("--all-targets")
         .arg("--all-features")
         .arg("-vvvv")
