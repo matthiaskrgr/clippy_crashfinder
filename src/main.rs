@@ -149,11 +149,23 @@ fn main() {
             let mut crash_dest = crashes_dir.clone();
             crash_dest.push(&archive_name);
             fs::copy(&copy_source, &crash_dest).unwrap();
+
             // save stdout and stderr
-            let mut stderr_file = crash_dest.clone();
-            stderr_file.push(".stderr");
-            let mut stdout_file = crash_dest.clone();
-            stdout_file.push(".stdout");
+            let mut stderr_file = crashes_dir.clone().display().to_string();
+            stderr_file.push_str("/");
+            stderr_file.push_str(&crate_file_name);
+            stderr_file.push_str(".stderr");
+
+            let mut stdout_file = crashes_dir.clone().display().to_string();
+            stdout_file.push_str("/");
+            stdout_file.push_str(&crate_file_name);
+            stdout_file.push_str(".stdout");
+
+            let stdout_file = std::path::PathBuf::from(stdout_file);
+            let stderr_file = std::path::PathBuf::from(stderr_file);
+            //println!("stderr_file: {:?}", stderr_file);
+            //println!("stdout_file: {:?}", stdout_file);
+
             fs::write(stderr_file, stderr).unwrap();
             fs::write(stdout_file, stdout).unwrap();
         } else {
