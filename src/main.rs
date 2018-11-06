@@ -155,10 +155,10 @@ fn main() {
         //println!("output: {:?}", CLIPPY);
         let stderr = String::from_utf8_lossy(&clippy.stderr).to_string();
         let stdout = String::from_utf8_lossy(&clippy.stdout).to_string();
-        if stderr.contains("internal compiler error")
-            || stderr.contains("query stack during panic")
-            || stdout.contains("internal compiler error")
-            || stdout.contains("query stack during panic")
+        if stderr.starts_with("error: internal compiler error:")
+            || stderr.starts_with("query stack during panic:")
+            || stdout.starts_with("error: internal compiler error:")
+            || stdout.starts_with("query stack during panic:")
         {
             println!(" ERROR: something crashed");
             bad_crates.push(crate_name);
