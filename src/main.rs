@@ -130,6 +130,7 @@ fn main() {
                 "-Wmissing-copy-implementations",
                 "-Wmissing-debug-implementations",
                 "-Wmissing-docs",
+                "-Wmissing-doc-code-examples",
                 "-Wquestion-mark-macro-sep",
                 "-Wsingle-use-lifetimes",
                 "-Wtrivial-casts",
