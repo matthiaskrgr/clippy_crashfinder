@@ -52,7 +52,8 @@ fn main() {
     let mut bad_crates = Vec::new();
 
     #[allow(non_snake_case)]
-    let SKIP_LIST: Vec<&str> = vec!["jni-0.10.2.crate"]; // hangs forever in build.rs
+    let SKIP_LIST: Vec<&str> = vec!["jni-0.10.2.crate", // hangs forever in build.rs
+    "web-sys-0.3.6.crate"];  // eats all ram
 
     for (crate_counter, archive) in crate_archives.into_iter().enumerate() {
         // check if we need to skip the package
@@ -195,7 +196,7 @@ fn main() {
         if work_dir.is_dir() {
             std::fs::remove_dir_all(&work_dir).unwrap();
         }
-        if target_dir_counter >= 400 {
+        if target_dir_counter >= 100 {
             // clear target dir
             println!("CLEARING TARGET DIR");
             std::fs::remove_dir_all(&target_dir).unwrap();
