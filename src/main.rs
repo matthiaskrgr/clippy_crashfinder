@@ -65,12 +65,13 @@ fn main() {
             if archive.file_name().unwrap().to_str().unwrap() == *bad_crate {
                 println!("SKIPPING {:?}", archive.file_name().unwrap());
                 skip_iteration = true;
+                break; // we need to skip this package, don't conitnue searching in the bad_crate vec
             } else {
                 skip_iteration = false;
             }
         }
+
         if skip_iteration {
-            println!("skipped");
             continue;
         }
 
