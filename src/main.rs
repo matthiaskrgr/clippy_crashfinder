@@ -53,9 +53,10 @@ fn main() {
 
     #[allow(non_snake_case)]
     let SKIP_LIST: Vec<&str> = vec![
-        "jni-sys-0.3.crate",   // just in case
-        "jni-0.10.2.crate",    // hangs forever in build.rs
-        "web-sys-0.3.6.crate", // eats all ram
+        "jni-sys-0.3.crate",        // just in case
+        "jni-0.10.2.crate",         // hangs forever in build.rs
+        "web-sys-0.3.6.crate",      // eats all ram
+        "tcmalloc-sys-0.3.0.crate", // hangs in build.rs
     ];
 
     for (crate_counter, archive) in crate_archives.into_iter().enumerate() {
