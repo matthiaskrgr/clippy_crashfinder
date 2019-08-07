@@ -113,7 +113,9 @@ fn main() {
         print!("{:>4} Checking {}", crate_counter, crate_name,);
         std::io::stdout().flush().unwrap();
         let clippy = std::process::Command::new("cargo")
-            .arg("clippy")
+            .arg("fix")
+            .arg("-Zunstable-options")
+            .arg("--clippy")
             //    let clippy = std::process::Command::new(
             //        "/home/matthias/vcs/github/rust-clippy/target/debug/cargo-clippy",
             //    )
@@ -167,6 +169,12 @@ fn main() {
             || stderr.starts_with("query stack during panic:")
             || stdout.starts_with("error: internal compiler error:")
             || stdout.starts_with("query stack during panic:")
+            || stdout.contains(
+                "warning: failed to automatically apply fixes suggested by rustc to crate",
+            )
+            || stderr.contains(
+                "warning: failed to automatically apply fixes suggested by rustc to crate",
+            )
         {
             println!(" ERROR: something crashed");
             bad_crates.push(crate_name);
