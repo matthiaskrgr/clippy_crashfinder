@@ -1,9 +1,133 @@
+use env_logger;
+use rustwide::{cmd::SandboxBuilder, Crate, Toolchain, WorkspaceBuilder};
+use std::error::Error;
 use std::fs;
 use std::fs::{create_dir, read_dir};
 use std::io::Write;
+use std::path::Path;
 use std::process::Command;
 
-fn main() {
+#[derive(Debug)]
+struct Krate {
+    name: String,
+    version: String,
+}
+
+fn main() -> Result<(), Box<dyn Error>> {
+    setup_logs();
+
+    // Create a new workspace in .workspaces/docs-builder
+    let workspace =
+        WorkspaceBuilder::new(Path::new(".workspaces/docs-builder"), "rustwide-examples").init()?;
+
+    // Run the builds on stable
+    let toolchain = Toolchain::Dist {
+        name: "nightly".into(),
+    };
+    toolchain.install(&workspace)?;
+    toolchain.add_component(&workspace, "clippy")?;
+    toolchain.add_component(&workspace, "rustfmt")?;
+
+    for krate in
+        std::fs::read_dir("/home/matthias/.cargo/registry/cache/github.com-1ecc6299db9ec823/")
+            .unwrap()
+            .filter(|f| f.is_ok())
+            .map(|f| f.unwrap().path())
+            .map(|f| f.file_name().map(|f| f.to_os_string()))
+            .filter(|f| f.is_some())
+            .map(|f| f.unwrap().into_string())
+            .filter(|f| f.is_ok())
+            .map(|f| f.unwrap())
+            .map(|name| name.to_string())
+            .map(|name| name.replace(".crate", ""))
+            .map(|name| {
+                let split = name.chars().rev().collect::<String>();
+                let split = split.split("-").collect::<Vec<_>>();
+                let version = split[0].chars().rev().collect::<String>();
+                let name = split[1..].join("").chars().rev().collect::<String>();
+
+                Krate {
+                    version: version,
+                    name: name,
+                }
+            })
+    /* &[
+        Krate {
+            name: "lazy_static".into(),
+            version: "1.0.0".into(),
+        },
+        Krate {
+            name: "cargo-cache".into(),
+            version: "0.3.3".into(),
+        },
+        Krate {
+            name: "rayon".into(),
+            version: "1.2.0".into(),
+        },
+    ]
+    */
+    {
+        println!("CHECKING: {} {}", krate.name, krate.version);
+        let krate = Crate::crates_io(&krate.name, &krate.version);
+        // Fetch lazy_static from crates.io
+        krate.fetch(&workspace)?;
+
+        /*
+        // Configure a sandbox with 2GB of RAM and no network access
+        let sandbox = SandboxBuilder::new()
+            .memory_limit(Some(1024 * 1024 * 1024 * 3))
+            .enable_networking(false);
+
+        let mut build_dir = workspace.build_dir("docs");
+        build_dir.build(&toolchain, &krate, sandbox).run(|build| {
+            build.cargo().args(&["doc", "--no-deps"]).run()?;
+            Ok(())
+        })?; */
+
+        let sandbox = SandboxBuilder::new()
+            .memory_limit(Some(1024 * 1024 * 1024 * 3))
+            .enable_networking(false);
+
+        let mut build_dir = workspace.build_dir("check");
+        build_dir.build(&toolchain, &krate, sandbox).run(|build| {
+            build
+                .cargo()
+                .args(&[
+                    "clippy",
+                    "--all-targets",
+                    "--all-features",
+                    "--",
+                    "--cap-lints=warn",
+                ])
+                .run()?;
+            Ok(())
+        })?;
+        /*
+        let sandbox = SandboxBuilder::new()
+            .memory_limit(Some(1024 * 1024 * 1024 * 3))
+            .enable_networking(false);
+
+        let mut build_dir = workspace.build_dir("fmt");
+        build_dir.build(&toolchain, &krate, sandbox).run(|build| {
+            build.cargo().args(&["fmt"]).run()?;
+            Ok(())
+        })?;
+        */
+    }
+
+    Ok(())
+}
+
+fn setup_logs() {
+    let mut env = env_logger::Builder::new();
+    env.filter_module("rustwide", log::LevelFilter::Info);
+    if let Ok(content) = std::env::var("RUST_LOG") {
+        env.parse_filters(&content);
+    }
+    rustwide::logging::init_with(env.build());
+}
+
+fn _main() {
     // store build artifacts here
     // will be cleared from time to time
     let mut target_dir = dirs::home_dir().unwrap();
