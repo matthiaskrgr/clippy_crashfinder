@@ -137,9 +137,11 @@ fn main() -> Result<(), Box<dyn Error>> {
             println!("500th build, cleaning cargo cache!");
             let _ = Command::new(&workspace, toolchain.cargo()).args(&["cache", "--autoclean"]);
         }
-        // if the target dir gets too big, clear it
+        // if the target dir gets too big, clear it, only check every 50 crates
         //  let target_dir_path = build_dir.host_target_dir();
-        if cumulative_dir_size(&PathBuf::from(".workspaces/crashfinder/builds/")) >= 5_000_000_000 {
+        if cumulative_dir_size(&PathBuf::from(".workspaces/crashfinder/builds/")) >= 5_000_000_000
+            && build_nr % 50 == 0
+        {
             println!("Purging build dirs");
             workspace.purge_all_build_dirs()?
         }
