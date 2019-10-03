@@ -16,10 +16,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     setup_logs();
 
     let sandbox = SandboxBuilder::new()
-        .memory_limit(Some(1024 * 1024 * 1024 * 3)) /*
-        arts_with("error: internal compiler error:")
-                    || stderr.starts_with("query stack during panic:")
-        */
+        .memory_limit(Some(1024 * 1024 * 1024 * 3))
         .enable_networking(false);
 
     // Create a new workspace in .workspaces/docs-builder
@@ -70,6 +67,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         .args(&["install", "cargo-cache"])
         .run();
 
+    let mut build_nr = 0_u32;
+
     for krate in
         std::fs::read_dir("/home/matthias/.cargo/registry/cache/github.com-1ecc6299db9ec823/")
             .unwrap()
@@ -94,7 +93,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 }
             })
     {
-        println!("CHECKING: {} {}", krate.name, krate.version);
+        println!("{}  CHECKING: {} {}", build_nr, krate.name, krate.version);
         let krate = Crate::crates_io(&krate.name, &krate.version);
         // dont error if the crate has been canked in the meanstime
         if krate.fetch(&workspace).is_err() {
@@ -130,8 +129,13 @@ fn main() -> Result<(), Box<dyn Error>> {
 
                 // Ok(())
             });
-    }
+    } // for
 
+    // we may need to clean the cargo cache from time to time, do this every 1000 builds:
+    if builds % 1000 == 0 {
+        println!("1000th build, cleaning cargo cache!");
+        let _ = Command::new(&workspace, toolchain.cargo()).args(&["cache", "--autoclean"]);
+    }
     Ok(())
 }
 
