@@ -132,7 +132,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     } // for
 
     // we may need to clean the cargo cache from time to time, do this every 1000 builds:
-    if builds % 1000 == 0 {
+    if build_nr % 1000 == 0 {
         println!("1000th build, cleaning cargo cache!");
         let _ = Command::new(&workspace, toolchain.cargo()).args(&["cache", "--autoclean"]);
     }
