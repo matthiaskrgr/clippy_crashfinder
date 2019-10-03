@@ -6,6 +6,7 @@ use std::fs;
 use std::fs::{create_dir, read_dir};
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use walkdir;
 #[derive(Debug)]
 struct Krate {
     name: String,
@@ -129,23 +130,51 @@ fn main() -> Result<(), Box<dyn Error>> {
 
                 // Ok(())
             });
-    } // for
+        // for
 
-    // we may need to clean the cargo cache from time to time, do this every 1000 builds:
-    if build_nr % 1000 == 0 {
-        println!("1000th build, cleaning cargo cache!");
-        let _ = Command::new(&workspace, toolchain.cargo()).args(&["cache", "--autoclean"]);
+        // we may need to clean the cargo cache from time to time, do this every 1000 builds:
+        if build_nr % 500 == 0 {
+            println!("500th build, cleaning cargo cache!");
+            let _ = Command::new(&workspace, toolchain.cargo()).args(&["cache", "--autoclean"]);
+        }
+        // if the target dir gets too big, clear it
+        //  let target_dir_path = build_dir.host_target_dir();
+        if cumulative_dir_size(&PathBuf::from(".workspaces/crashfinder/builds/")) >= 5_000_000_000 {
+            println!("Purging build dirs");
+            workspace.purge_all_build_dirs()?
+        }
+
+        build_nr += 1;
     }
     Ok(())
 }
 
 fn setup_logs() {
     let mut env = env_logger::Builder::new();
-    env.filter_module("rustwide", log::LevelFilter::Info);
+    env.filter_module("rustwide", log::LevelFilter::Warn); // ..Filter::Info
     if let Ok(content) = std::env::var("RUST_LOG") {
         env.parse_filters(&content);
     }
     rustwide::logging::init_with(env.build());
+}
+
+fn cumulative_dir_size(dir: &PathBuf) -> u64 {
+    if !dir.is_dir() {
+        return 0;
+    }
+
+    let walkdir_start = dir.display().to_string();
+
+    walkdir::WalkDir::new(&walkdir_start)
+        .into_iter()
+        .map(|e| e.unwrap().path().to_owned())
+        .filter(|f| f.exists()) // avoid broken symlinks
+        .map(|f| {
+            fs::metadata(f)
+                .expect("failed to get metadata of file when getting size of dir")
+                .len()
+        })
+        .sum()
 }
 
 /*
