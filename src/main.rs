@@ -29,6 +29,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     };
     toolchain.install(&workspace)?;
 
+    // get clippy
     match toolchain.add_component(&workspace, "clippy") {
         Ok(_) => {}
         // if we can't install clippy component, try building from git
@@ -44,6 +45,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     }
 
+    // get rustfmt
     match toolchain.add_component(&workspace, "rustfmt") {
         Ok(_) => {}
         // if we can't install clippy component, try building from git
@@ -58,7 +60,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     }
 
-    std::process::exit(1);
+    // install cargo-cache
+    let _ = Command::new(&workspace, toolchain.cargo())
+        .args(&["install", "cargo-cache"])
+        .run();
 
     for krate in
         std::fs::read_dir("/home/matthias/.cargo/registry/cache/github.com-1ecc6299db9ec823/")
@@ -83,64 +88,38 @@ fn main() -> Result<(), Box<dyn Error>> {
                     name: name,
                 }
             })
-    /* &[
-        Krate {
-            name: "lazy_static".into(),
-            version: "1.0.0".into(),
-        },
-        Krate {
-            name: "cargo-cache".into(),
-            version: "0.3.3".into(),
-        },
-        Krate {
-            name: "rayon".into(),
-            version: "1.2.0".into(),
-        },
-    ]
-    */
     {
         println!("CHECKING: {} {}", krate.name, krate.version);
         let krate = Crate::crates_io(&krate.name, &krate.version);
-        // Fetch lazy_static from crates.io
         krate.fetch(&workspace)?;
 
-        /*
-        // Configure a sandbox with 2GB of RAM and no network access
-        let sandbox = SandboxBuilder::new()
-            .memory_limit(Some(1024 * 1024 * 1024 * 3))
-            .enable_networking(false);
-
-        let mut build_dir = workspace.build_dir("docs");
-        build_dir.build(&toolchain, &krate, sandbox).run(|build| {
-            build.cargo().args(&["doc", "--no-deps"]).run()?;
-            Ok(())
-        })?; */
-
-        let mut build_dir = workspace.build_dir("check");
-        build_dir.build(&toolchain, &krate, sandbox).run(|build| {
-            build
-                .cargo()
-                .args(&[
-                    "clippy",
-                    "--all-targets",
-                    "--all-features",
-                    "--",
-                    "--cap-lints=warn",
-                ])
-                .run()?;
-            Ok(())
-        })?;
-        /*
-        let sandbox = SandboxBuilder::new()
-            .memory_limit(Some(1024 * 1024 * 1024 * 3))
-            .enable_networking(false);
-
-        let mut build_dir = workspace.build_dir("fmt");
-        build_dir.build(&toolchain, &krate, sandbox).run(|build| {
-            build.cargo().args(&["fmt"]).run()?;
-            Ok(())
-        })?;
-        */
+        let mut build_dir = workspace.build_dir("clippy");
+        build_dir
+            .build(&toolchain, &krate, sandbox.clone())
+            .run(|build| {
+                build
+                    .cargo()
+                    .args(&[
+                        "clippy",
+                        "--all-targets",
+                        "--all-features",
+                        "-vvvv",
+                        "--",
+                        "--cap-lints=warn",
+                    ])
+                    .env("CARGO_INCREMENTAL", "0")
+                    .env("RUST_BACKTRACE", "full")
+                    .process_lines(&mut |line| {
+                        if line.contains("internal compiler error:")
+                            || line.contains("query stack during panic:")
+                        {
+                            // ice = true;
+                            std::process::exit(3);
+                        }
+                    })
+                    .run()?;
+                Ok(())
+            })?;
     }
 
     Ok(())
