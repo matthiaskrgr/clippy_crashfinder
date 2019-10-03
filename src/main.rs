@@ -16,7 +16,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     setup_logs();
 
     let sandbox = SandboxBuilder::new()
-        .memory_limit(Some(1024 * 1024 * 1024 * 3))
+        .memory_limit(Some(1024 * 1024 * 1024 * 3)) /*
+        arts_with("error: internal compiler error:")
+                    || stderr.starts_with("query stack during panic:")
+        */
         .enable_networking(false);
 
     // Create a new workspace in .workspaces/docs-builder
@@ -40,6 +43,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 "https://github.com/rust-lang/rust-clippy",
                 "--force",
                 "clippy",
+                "--release",
             ]);
             install_clippy.run()?;
         }
@@ -55,6 +59,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 "--git",
                 "https://github.com/rust-lang/rustfmt",
                 "--force",
+                "--release",
             ]);
             install_rustfmt.run()?;
         }
@@ -91,7 +96,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     {
         println!("CHECKING: {} {}", krate.name, krate.version);
         let krate = Crate::crates_io(&krate.name, &krate.version);
-        krate.fetch(&workspace)?;
+        // dont error if the crate has been canked in the meanstime
+        if krate.fetch(&workspace).is_err() {
+            continue;
+        }
 
         let mut build_dir = workspace.build_dir("clippy");
         build_dir
@@ -117,9 +125,11 @@ fn main() -> Result<(), Box<dyn Error>> {
                             std::process::exit(3);
                         }
                     })
-                    .run()?;
-                Ok(())
-            })?;
+                    // do not throw an error if the package fails to build!
+                    .run()
+
+                // Ok(())
+            });
     }
 
     Ok(())
