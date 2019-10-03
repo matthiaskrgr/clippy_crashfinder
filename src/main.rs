@@ -1,12 +1,11 @@
 use env_logger;
+use rustwide::cmd::Command;
 use rustwide::{cmd::SandboxBuilder, Crate, Toolchain, WorkspaceBuilder};
 use std::error::Error;
 use std::fs;
 use std::fs::{create_dir, read_dir};
 use std::io::Write;
-use std::path::Path;
-use std::process::Command;
-
+use std::path::{Path, PathBuf};
 #[derive(Debug)]
 struct Krate {
     name: String,
@@ -16,17 +15,50 @@ struct Krate {
 fn main() -> Result<(), Box<dyn Error>> {
     setup_logs();
 
+    let sandbox = SandboxBuilder::new()
+        .memory_limit(Some(1024 * 1024 * 1024 * 3))
+        .enable_networking(false);
+
     // Create a new workspace in .workspaces/docs-builder
     let workspace =
-        WorkspaceBuilder::new(Path::new(".workspaces/docs-builder"), "rustwide-examples").init()?;
+        WorkspaceBuilder::new(Path::new(".workspaces/crashfinder"), "crashfinder").init()?;
 
-    // Run the builds on stable
+    // Get nightly toolchain
     let toolchain = Toolchain::Dist {
         name: "nightly".into(),
     };
     toolchain.install(&workspace)?;
-    toolchain.add_component(&workspace, "clippy")?;
-    toolchain.add_component(&workspace, "rustfmt")?;
+
+    match toolchain.add_component(&workspace, "clippy") {
+        Ok(_) => {}
+        // if we can't install clippy component, try building from git
+        Err(_) => {
+            let install_clippy = Command::new(&workspace, toolchain.cargo()).args(&[
+                "install",
+                "--git",
+                "https://github.com/rust-lang/rust-clippy",
+                "--force",
+                "clippy",
+            ]);
+            install_clippy.run()?;
+        }
+    }
+
+    match toolchain.add_component(&workspace, "rustfmt") {
+        Ok(_) => {}
+        // if we can't install clippy component, try building from git
+        Err(_) => {
+            let install_rustfmt = Command::new(&workspace, toolchain.cargo()).args(&[
+                "install",
+                "--git",
+                "https://github.com/rust-lang/rustfmt",
+                "--force",
+            ]);
+            install_rustfmt.run()?;
+        }
+    }
+
+    std::process::exit(1);
 
     for krate in
         std::fs::read_dir("/home/matthias/.cargo/registry/cache/github.com-1ecc6299db9ec823/")
@@ -84,10 +116,6 @@ fn main() -> Result<(), Box<dyn Error>> {
             Ok(())
         })?; */
 
-        let sandbox = SandboxBuilder::new()
-            .memory_limit(Some(1024 * 1024 * 1024 * 3))
-            .enable_networking(false);
-
         let mut build_dir = workspace.build_dir("check");
         build_dir.build(&toolchain, &krate, sandbox).run(|build| {
             build
@@ -127,6 +155,7 @@ fn setup_logs() {
     rustwide::logging::init_with(env.build());
 }
 
+/*
 fn _main() {
     // store build artifacts here
     // will be cleared from time to time
@@ -346,3 +375,4 @@ fn _main() {
     println!("crashes found:");
     bad_crates.into_iter().for_each(|c| println!("{}", c));
 }
+*/
