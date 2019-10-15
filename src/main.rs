@@ -3,8 +3,6 @@ use rustwide::cmd::Command;
 use rustwide::{cmd::SandboxBuilder, Crate, Toolchain, WorkspaceBuilder};
 use std::error::Error;
 use std::fs;
-use std::fs::{create_dir, read_dir};
-use std::io::Write;
 use std::path::{Path, PathBuf};
 use walkdir;
 #[derive(Debug)]
@@ -14,6 +12,8 @@ struct Krate {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
+    let mut crashes = Vec::new();
+
     setup_logs();
 
     let sandbox = SandboxBuilder::new()
@@ -46,7 +46,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     }
 
-/*
+    /*
     // get rustfmt
     match toolchain.add_component(&workspace, "rustfmt") {
         Ok(_) => {}
@@ -80,18 +80,14 @@ fn main() -> Result<(), Box<dyn Error>> {
             .map(|f| f.unwrap().into_string())
             .filter(|f| f.is_ok())
             .map(|f| f.unwrap())
-            .map(|name| name.to_string())
             .map(|name| name.replace(".crate", ""))
             .map(|name| {
                 let split = name.chars().rev().collect::<String>();
-                let split = split.split("-").collect::<Vec<_>>();
+                let split = split.split('-').collect::<Vec<_>>();
                 let version = split[0].chars().rev().collect::<String>();
                 let name = split[1..].join("").chars().rev().collect::<String>();
 
-                Krate {
-                    version: version,
-                    name: name,
-                }
+                Krate { version, name }
             })
             .collect::<Vec<Krate>>();
     krates.sort_by_key(|k| format!("{}-{}", k.name, k.version));
@@ -128,7 +124,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     .log_output(true)
                     .run_capture();
                 match output {
-                    Err(_) => {}
+                    Err(_err) => {}
                     Ok(output) => {
                         let stdout: String = output.stdout_lines().join("\n");
                         let stderr: String = output.stderr_lines().join("\n");
@@ -140,30 +136,34 @@ fn main() -> Result<(), Box<dyn Error>> {
                                 eprintln!("CRASH: {:?}", mykrate);
                                 eprintln!("stdout:\n{}", stdout);
                                 eprintln!("stderr:\n{}", stderr);
-                                std::process::exit(1);
+                                crashes.push(mykrate);
                             }
                         }
                     }
                 };
                 Ok(())
-                // Ok(())
-            });
+            })?;
         // for
 
         // we may need to clean the cargo cache from time to time, do this every 1000 builds:
         if build_nr % 500 == 0 {
             println!("500th build, cleaning cargo cache!");
             let _ = Command::new(&workspace, toolchain.cargo()).args(&["cache", "--autoclean"]);
+            println!("crashes so far: \n{:?}", crashes);
         }
         // if the target dir gets too big, clear it, only check every 50 crates
         //  let target_dir_path = build_dir.host_target_dir();
         if cumulative_dir_size(&PathBuf::from(".workspaces/crashfinder/builds/")) >= 5_000_000_000
             && build_nr % 50 == 0
         {
+            println!("crashes so far: \n{:?}", crashes);
             println!("Purging build dirs");
             workspace.purge_all_build_dirs()?
         }
     }
+    println!("\n\n\nCRASHES:");
+    crashes.iter().for_each(|c| eprintln!("{:?}", c));
+
     Ok(())
 }
 
