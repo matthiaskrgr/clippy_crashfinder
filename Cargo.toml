@@ -5,9 +5,9 @@ authors = ["Matthias Krüger <matthias.krueger@famsik.de>"]
 edition = "2018"
 
 [dependencies]
-dirs = "1.0"
+dirs = "2.0.2"
 #rayon = "1.0"
-rustwide = "0.3.1"
+rustwide = "0.3.2"
 env_logger = "0.7.0"
 log = "0.4.8"
 walkdir = "2.2.9"
