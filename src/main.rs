@@ -118,9 +118,37 @@ fn main() -> Result<(), Box<dyn Error>> {
                         "-vvvv",
                         "--",
                         "--cap-lints=warn",
+                        "-W clippy::internal",
+                        "-W clippy::pedantic",
+                        "-W clippy::nursery",
+                        "-W missing-doc-code-examples ",
+                        "-W absolute-paths-not-startin-with-crate",
+                        "-W bare-trait-objects",
+                        "-W box-pointers",
+                        "-W elided-lifetimes-in-paths",
+                        "-W ellipsis-inclusive-range-patterns",
+                        "-W keyword-idents",
+                        "-W macro-use-extern-crate",
+                        "-W missing-copy-implementations",
+                        "-W missing-debug-implementations",
+                        "-W missing-docs",
+                        "-W single-use-lifetimes",
+                        "-W trivial-casts",
+                        "-W trivial-numeric-casts",
+                        "-W unreachable-pub",
+                        "-W unsafe-code",
+                        "-W unstable-features",
+                        "-W unused-extern-crates",
+                        "-W unused-import-braces",
+                        "-W unused-labels",
+                        "-W unused-lifetimes",
+                        "-W unused-qualifications",
+                        "-W unused-results",
+                        "-W variant-size-differences",
                     ])
                     .env("CARGO_INCREMENTAL", "0")
                     .env("RUST_BACKTRACE", "full")
+                    .env("RUSTC_BOOTSTRAP", "1")
                     .log_output(true)
                     .run_capture();
                 match output {
@@ -169,7 +197,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 fn setup_logs() {
     let mut env = env_logger::Builder::new();
-    env.filter_module("rustwide", log::LevelFilter::Info); // ..Filter::Info
+    env.filter_module("rustwide", log::LevelFilter::Warn); // ..Filter::Info
     if let Ok(content) = std::env::var("RUST_LOG") {
         env.parse_filters(&content);
     }
