@@ -100,13 +100,14 @@ fn main() -> Result<(), Box<dyn Error>> {
             build_nr, mykrate.name, mykrate.version
         );
         let krate = Crate::crates_io(&mykrate.name, &mykrate.version);
-        // dont error if the crate has been canked in the meanstime
+
+        // don't error if the crate has been yanked in the meanstime
         if krate.fetch(&workspace).is_err() {
             continue;
         }
 
         let mut build_dir = workspace.build_dir("clippy");
-        build_dir
+        let _ = build_dir // ignore the Result<,>
             .build(&toolchain, &krate, sandbox.clone())
             .run(|build| {
                 let output = build
@@ -170,7 +171,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     }
                 };
                 Ok(())
-            })?;
+            });
         // for
 
         // we may need to clean the cargo cache from time to time, do this every 1000 builds:
